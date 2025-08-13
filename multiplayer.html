@@ -9,13 +9,9 @@
 <body>
   <h1>♟ Multiplayer Chess Game</h1>
   <div id="board-container">
-    <div id="board" style="width:480px; height:480px;"></div>
+    <div id="board"></div>
   </div>
   <div id="status">Loading...</div>
-
-  <!-- Single-player chess scripts -->
-  <script src="js/chessboard.js"></script>
-  <script src="js/rules.js"></script>
 
   <!-- Firebase -->
   <script type="module">
@@ -40,26 +36,5 @@
   <script type="module" src="js/multiplayer/firestore.js"></script>
   <script type="module" src="js/multiplayer/lobby.js"></script>
   <script type="module" src="js/multiplayer/multiplayer.js"></script>
-
-  <!-- Initialize game after window loads -->
-  <script type="module">
-    import { initLobby } from "./js/multiplayer/lobby.js";
-
-    window.addEventListener("load", async () => {
-      initLobby((gameId, isCreator) => {
-        console.log("Game ID:", gameId);
-
-        // Initialize chessboard from local single-player code
-        window.initBoard();      // reset board state
-        window.renderBoard();    // draw board
-
-        document.getElementById("status").innerText = `Game ID: ${gameId}. Waiting for opponent...`;
-
-        // Here you can now call multiplayer.js functions to subscribe to Firestore
-        // and update the board in real-time
-        if (window.startMultiplayer) window.startMultiplayer(gameId, isCreator);
-      });
-    });
-  </script>
 </body>
 </html>

@@ -19,13 +19,15 @@ let currentPlayer = 'white';
 let castlingRights = {whiteK:true, whiteQ:true, blackK:true, blackQ:true};
 let enPassantTarget = null;
 
-function _renderBoardInternal(){
+// Internal render function
+function _renderBoardInternal() {
   const boardDiv = document.getElementById('board');
+  if (!boardDiv) return;
   boardDiv.innerHTML = '';
-  for(let r=0;r<8;r++){
-    for(let c=0;c<8;c++){
+  for(let r=0; r<8; r++) {
+    for(let c=0; c<8; c++) {
       const sq = document.createElement('div');
-      sq.className = 'square ' + ((r+c)%2===0 ? 'light':'dark');
+      sq.className = 'square ' + ((r+c)%2===0 ? 'light' : 'dark');
       sq.dataset.r = r;
       sq.dataset.c = c;
       sq.innerText = piecesUnicode[board[r][c]];
@@ -37,9 +39,10 @@ function _renderBoardInternal(){
   updateStatus();
 }
 
-function pieceColor(p){ return p.toUpperCase() === p ? 'white' : 'black'; }
+function pieceColor(p) { return p.toUpperCase() === p ? 'white' : 'black'; }
 
-function makeMove(from,to){
+// Updated makeMove: multiplayer can pass `skipTurnToggle=true`
+function makeMove(from, to, skipTurnToggle=false){
   const moving = board[from.r][from.c];
 
   // Castling
@@ -62,6 +65,12 @@ function makeMove(from,to){
   if(moving.toLowerCase()==='p' && Math.abs(to.r-from.r)===2){
     enPassantTarget={r:(from.r+to.r)/2|0, c:from.c};
   }
+
+  if(!skipTurnToggle){
+    currentPlayer = (currentPlayer==='white')?'black':'white';
+  }
+
+  _renderBoardInternal();
 }
 
 function onSquareClick(e){
@@ -78,7 +87,6 @@ function onSquareClick(e){
     const legal = moves.some(m=>m[0]===r && m[1]===c);
     if(legal){
       makeMove(selectedSquare,{r,c});
-      currentPlayer = (currentPlayer==='white')?'black':'white';
     }
     selectedSquare=null;
   }
@@ -97,15 +105,23 @@ function highlightSelection(){
 }
 
 function updateStatus(){
-  document.getElementById('status').innerText = `${currentPlayer.charAt(0).toUpperCase()+currentPlayer.slice(1)}'s turn`;
+  const statusDiv = document.getElementById('status');
+  if(statusDiv) statusDiv.innerText = `${currentPlayer.charAt(0).toUpperCase()+currentPlayer.slice(1)}'s turn`;
 }
 
-// Public API
+// Public API for multiplayer
 window.initBoard = function(){
   selectedSquare=null;
   currentPlayer='white';
   castlingRights={whiteK:true, whiteQ:true, blackK:true, blackQ:true};
   enPassantTarget=null;
+  _renderBoardInternal();
 };
 
-window.renderBoard=function(){ _renderBoardInternal(); };
+window.renderBoard = function(){ _renderBoardInternal(); };
+
+// Expose board and makeMove for multiplayer.js
+window.board = board;
+window.currentPlayer = currentPlayer;
+window.makeMove = makeMove;
+window._renderBoardInternal = _renderBoardInternal;

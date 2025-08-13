@@ -1,74 +1,65 @@
-// js/multiplayer/multiplayer.js
+// multiplayer.js
 import { initLobby } from "./lobby.js";
-import { createGame, subscribeToGame, updateGame } from "./firestore.js";
+import { createGame, joinGame, subscribeToGame, updateGame } from "./firestore.js";
 
-// Use existing single-player board logic
-// Assume window.initBoard() and window.renderBoard() exist (from chessboard.js)
+// Ensure we use the existing board logic
+import { initBoard, renderBoard, board, makeMove, currentPlayer, _renderBoardInternal } from "../chessboard.js";
 
 let gameId;
-let currentPlayerColor;
-let localTurn = "white";
+let isCreator;
+let playerColor;
 
-async function startMultiplayer() {
-  await initLobby(async (id, isCreator) => {
-    gameId = id;
-    currentPlayerColor = isCreator ? "white" : "black";
+// Initialize lobby and game
+initLobby(async (id, creator) => {
+  gameId = id;
+  isCreator = creator;
 
-    if (isCreator) {
-      // initialize Firestore board
-      initBoard();
-      renderBoard();
-      const initialBoard = JSON.parse(JSON.stringify(window.board));
-      await createGame(gameId, initialBoard);
-    }
+  if (isCreator) {
+    // Creator = white
+    playerColor = "white";
+    initBoard();
+    await createGame(gameId, board);
+    renderBoard();
+  } else {
+    // Joiner = black
+    playerColor = "black";
+    await joinGame(gameId);
+    const data = await (await fetchGameOnce(gameId));
+    Object.assign(board, data.board); // Copy board state
+    _renderBoardInternal();
+  }
 
-    // subscribe to real-time updates
-    subscribeToGame(gameId, (data) => {
-      if (!data) return;
-      window.board = data.board;
-      localTurn = data.turn;
-      renderBoard();
-      document.getElementById("status").innerText = 
-        localTurn === currentPlayerColor ? "Your turn" : "Opponent's turn";
-    });
-
-    // attach click handler for moves
-    attachBoardClicks();
+  subscribeToGame(gameId, (data) => {
+    // Update local board and current player
+    Object.assign(board, data.board);
+    window.currentPlayer = data.currentPlayer;
+    _renderBoardInternal();
+    updateStatus();
   });
-}
-
-function attachBoardClicks() {
-  const boardDiv = document.getElementById("board");
-  boardDiv.querySelectorAll(".square").forEach(sq => {
-    sq.addEventListener("click", async (e) => {
-      const r = parseInt(e.target.dataset.r);
-      const c = parseInt(e.target.dataset.c);
-
-      if (!window.selectedSquare) {
-        const piece = window.board[r][c];
-        if (piece && window.pieceColor(piece) === currentPlayerColor && localTurn === currentPlayerColor) {
-          window.selectedSquare = { r, c };
-          window.highlightSelection();
-        }
-      } else {
-        const moves = window.getLegalMoves(window.board, window.selectedSquare.r, window.selectedSquare.c, localTurn, window.castlingRights, window.enPassantTarget);
-        const isLegal = moves.some(m => m[0] === r && m[1] === c);
-
-        if (isLegal && localTurn === currentPlayerColor) {
-          // make move locally
-          window.makeMove(window.selectedSquare, { r, c });
-          // push update to Firestore
-          await updateGame(gameId, JSON.parse(JSON.stringify(window.board)), localTurn === "white" ? "black" : "white", { from: window.selectedSquare, to: { r, c } });
-          localTurn = localTurn === "white" ? "black" : "white";
-        }
-        window.selectedSquare = null;
-        renderBoard();
-      }
-    });
-  });
-}
-
-// Start multiplayer after page load
-window.addEventListener("load", () => {
-  startMultiplayer();
 });
+
+async function fetchGameOnce(id) {
+  return await (await import("./firestore.js")).getGame(id);
+}
+
+// Override makeMove to sync with Firestore
+const originalMakeMove = makeMove;
+window.makeMove = async function(from, to) {
+  if (playerColor !== currentPlayer) return; // Only allow your turn
+  originalMakeMove(from, to);
+  // Update Firestore
+  await updateGame(gameId, {
+    board: board,
+    currentPlayer: (currentPlayer === "white") ? "black" : "white"
+  });
+  updateStatus();
+};
+
+function updateStatus() {
+  const statusDiv = document.getElementById("status");
+  if (currentPlayer === playerColor) {
+    statusDiv.innerText = "Your turn (" + playerColor + ")";
+  } else {
+    statusDiv.innerText = "Opponent's turn";
+  }
+}
