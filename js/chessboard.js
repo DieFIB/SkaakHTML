@@ -1,4 +1,7 @@
-let board = [
+// js/chessboard.js
+
+// Board initialization
+window.board = [
   ['r','n','b','q','k','b','n','r'],
   ['p','p','p','p','p','p','p','p'],
   ['','','','','','','',''],
@@ -11,27 +14,26 @@ let board = [
 
 const piecesUnicode = {
   'r':'♜','n':'♞','b':'♝','q':'♛','k':'♚','p':'♟',
-  'R':'♖','N':'♘','B':'♗','Q':'♕','K':'♔','P':'♙','':''
+  'R':'♖','N':'♘','B':'♗','Q':'♕','K':'♔','P':'♙','':''  
 };
 
-let selectedSquare = null;
-let currentPlayer = 'white';
-let castlingRights = {whiteK:true, whiteQ:true, blackK:true, blackQ:true};
-let enPassantTarget = null;
+window.selectedSquare = null;
+window.currentPlayer = 'white';
+window.castlingRights = {whiteK:true, whiteQ:true, blackK:true, blackQ:true};
+window.enPassantTarget = null;
 
-// Internal render function
-function _renderBoardInternal() {
+// Render the board
+window._renderBoardInternal = function(){
   const boardDiv = document.getElementById('board');
-  if (!boardDiv) return;
   boardDiv.innerHTML = '';
-  for(let r=0; r<8; r++) {
-    for(let c=0; c<8; c++) {
+  for(let r=0;r<8;r++){
+    for(let c=0;c<8;c++){
       const sq = document.createElement('div');
-      sq.className = 'square ' + ((r+c)%2===0 ? 'light' : 'dark');
+      sq.className = 'square ' + ((r+c)%2===0 ? 'light':'dark');
       sq.dataset.r = r;
       sq.dataset.c = c;
-      sq.innerText = piecesUnicode[board[r][c]];
-      sq.addEventListener('click', onSquareClick);
+      sq.innerText = piecesUnicode[window.board[r][c]];
+      sq.addEventListener('click', window.onSquareClick);
       boardDiv.appendChild(sq);
     }
   }
@@ -39,89 +41,75 @@ function _renderBoardInternal() {
   updateStatus();
 }
 
-function pieceColor(p) { return p.toUpperCase() === p ? 'white' : 'black'; }
+function pieceColor(p){ return p.toUpperCase() === p ? 'white' : 'black'; }
 
-// Updated makeMove: multiplayer can pass `skipTurnToggle=true`
-function makeMove(from, to, skipTurnToggle=false){
-  const moving = board[from.r][from.c];
+window.makeMove = function(from,to){
+  const moving = window.board[from.r][from.c];
 
   // Castling
   if(moving.toLowerCase()==='k' && Math.abs(to.c-from.c)===2){
-    if(to.c===6){ board[to.r][5]=board[to.r][7]; board[to.r][7]=''; }
-    if(to.c===2){ board[to.r][3]=board[to.r][0]; board[to.r][0]=''; }
+    if(to.c===6){ window.board[to.r][5]=window.board[to.r][7]; window.board[to.r][7]=''; }
+    if(to.c===2){ window.board[to.r][3]=window.board[to.r][0]; window.board[to.r][0]=''; }
   }
 
   // En passant
-  if(moving.toLowerCase()==='p' && enPassantTarget && to.r===enPassantTarget.r && to.c===enPassantTarget.c){
-    const dir = (currentPlayer==='white') ? 1:-1;
-    board[to.r+dir][to.c]='';
+  if(moving.toLowerCase()==='p' && window.enPassantTarget && to.r===window.enPassantTarget.r && to.c===window.enPassantTarget.c){
+    const dir = (window.currentPlayer==='white') ? 1:-1;
+    window.board[to.r+dir][to.c]='';
   }
 
-  board[to.r][to.c]=moving;
-  board[from.r][from.c]='';
+  window.board[to.r][to.c]=moving;
+  window.board[from.r][from.c]='';
 
   // Update en passant
-  enPassantTarget=null;
+  window.enPassantTarget=null;
   if(moving.toLowerCase()==='p' && Math.abs(to.r-from.r)===2){
-    enPassantTarget={r:(from.r+to.r)/2|0, c:from.c};
+    window.enPassantTarget={r:(from.r+to.r)/2|0, c:from.c};
   }
-
-  if(!skipTurnToggle){
-    currentPlayer = (currentPlayer==='white')?'black':'white';
-  }
-
-  _renderBoardInternal();
 }
 
-function onSquareClick(e){
+window.onSquareClick = function(e){
   const r=parseInt(e.target.dataset.r);
   const c=parseInt(e.target.dataset.c);
-  const piece = board[r][c];
+  const piece = window.board[r][c];
 
-  if(!selectedSquare){
-    if(piece && pieceColor(piece)===currentPlayer){
-      selectedSquare={r,c};
+  if(!window.selectedSquare){
+    if(piece && pieceColor(piece)===window.currentPlayer){
+      window.selectedSquare={r,c};
     }
   } else {
-    const moves = getLegalMoves(board, selectedSquare.r, selectedSquare.c, currentPlayer, castlingRights, enPassantTarget);
+    const moves = getLegalMoves(window.board, window.selectedSquare.r, window.selectedSquare.c, window.currentPlayer, window.castlingRights, window.enPassantTarget);
     const legal = moves.some(m=>m[0]===r && m[1]===c);
     if(legal){
-      makeMove(selectedSquare,{r,c});
+      window.makeMove(window.selectedSquare,{r,c});
+      window.currentPlayer = (window.currentPlayer==='white')?'black':'white';
     }
-    selectedSquare=null;
+    window.selectedSquare=null;
   }
 
-  _renderBoardInternal();
+  window._renderBoardInternal();
 }
 
 function highlightSelection(){
-  if(!selectedSquare) return;
+  if(!window.selectedSquare) return;
   const squares=document.querySelectorAll('.square');
   squares.forEach(sq=>{
-    if(parseInt(sq.dataset.r)===selectedSquare.r && parseInt(sq.dataset.c)===selectedSquare.c){
+    if(parseInt(sq.dataset.r)===window.selectedSquare.r && parseInt(sq.dataset.c)===window.selectedSquare.c){
       sq.classList.add('selected');
     }
   });
 }
 
 function updateStatus(){
-  const statusDiv = document.getElementById('status');
-  if(statusDiv) statusDiv.innerText = `${currentPlayer.charAt(0).toUpperCase()+currentPlayer.slice(1)}'s turn`;
+  document.getElementById('status').innerText = `${window.currentPlayer.charAt(0).toUpperCase()+window.currentPlayer.slice(1)}'s turn`;
 }
 
-// Public API for multiplayer
+// Public API
 window.initBoard = function(){
-  selectedSquare=null;
-  currentPlayer='white';
-  castlingRights={whiteK:true, whiteQ:true, blackK:true, blackQ:true};
-  enPassantTarget=null;
-  _renderBoardInternal();
+  window.selectedSquare=null;
+  window.currentPlayer='white';
+  window.castlingRights={whiteK:true, whiteQ:true, blackK:true, blackQ:true};
+  window.enPassantTarget=null;
 };
 
-window.renderBoard = function(){ _renderBoardInternal(); };
-
-// Expose board and makeMove for multiplayer.js
-window.board = board;
-window.currentPlayer = currentPlayer;
-window.makeMove = makeMove;
-window._renderBoardInternal = _renderBoardInternal;
+window.renderBoard=function(){ window._renderBoardInternal(); };

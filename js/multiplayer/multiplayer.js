@@ -1,65 +1,65 @@
-// multiplayer.js
-import { initLobby } from "./lobby.js";
-import { createGame, joinGame, subscribeToGame, updateGame } from "./firestore.js";
+import { createGame, joinGame, subscribeToGame } from './firestore.js';
 
-// Ensure we use the existing board logic
-import { initBoard, renderBoard, board, makeMove, currentPlayer, _renderBoardInternal } from "../chessboard.js";
+// Elements
+const landing = document.getElementById('landing-screen');
+const gameScreen = document.getElementById('game-screen');
+const codeDisplay = document.getElementById('code-display');
+const clockEl = document.getElementById('clock');
+const statusEl = document.getElementById('status');
+const generateBtn = document.getElementById('generate-btn');
+const joinBtn = document.getElementById('join-btn');
+const joinInput = document.getElementById('join-code');
 
-let gameId;
-let isCreator;
-let playerColor;
+let gameId = null;
+let currentPlayerColor = 'white';
+let timerInterval = null;
+let secondsElapsed = 0;
 
-// Initialize lobby and game
-initLobby(async (id, creator) => {
-  gameId = id;
-  isCreator = creator;
-
-  if (isCreator) {
-    // Creator = white
-    playerColor = "white";
-    initBoard();
-    await createGame(gameId, board);
-    renderBoard();
-  } else {
-    // Joiner = black
-    playerColor = "black";
-    await joinGame(gameId);
-    const data = await (await fetchGameOnce(gameId));
-    Object.assign(board, data.board); // Copy board state
-    _renderBoardInternal();
-  }
-
-  subscribeToGame(gameId, (data) => {
-    // Update local board and current player
-    Object.assign(board, data.board);
-    window.currentPlayer = data.currentPlayer;
-    _renderBoardInternal();
-    updateStatus();
-  });
+// --- Event Listeners ---
+generateBtn.addEventListener('click', async () => {
+  gameId = await createGame();
+  currentPlayerColor = 'white';
+  startGame();
 });
 
-async function fetchGameOnce(id) {
-  return await (await import("./firestore.js")).getGame(id);
+joinBtn.addEventListener('click', async () => {
+  const input = joinInput.value.trim();
+  if(!input || input.length !== 4) return alert("Enter a 4-digit code");
+  const exists = await joinGame(input);
+  if(!exists) return alert("Game not found");
+  gameId = input;
+  currentPlayerColor = 'black';
+  startGame();
+});
+
+// --- Game Setup ---
+function startGame() {
+  landing.style.display = 'none';
+  gameScreen.style.display = 'block';
+  codeDisplay.innerText = gameId;
+
+  window.initBoard();   // existing chessboard init
+  window.renderBoard(); // render initial board
+
+  subscribeToGame(gameId, (boardState, turn) => {
+    if(boardState) {
+      window.board = boardState;
+      window.currentPlayer = turn;
+      window.renderBoard();
+    }
+  });
+
+  statusEl.innerText = "Waiting for player...";
+
+  // Start clock on first move
+  document.getElementById('board').addEventListener('click', startClockOnce, {once:true});
 }
 
-// Override makeMove to sync with Firestore
-const originalMakeMove = makeMove;
-window.makeMove = async function(from, to) {
-  if (playerColor !== currentPlayer) return; // Only allow your turn
-  originalMakeMove(from, to);
-  // Update Firestore
-  await updateGame(gameId, {
-    board: board,
-    currentPlayer: (currentPlayer === "white") ? "black" : "white"
-  });
-  updateStatus();
-};
-
-function updateStatus() {
-  const statusDiv = document.getElementById("status");
-  if (currentPlayer === playerColor) {
-    statusDiv.innerText = "Your turn (" + playerColor + ")";
-  } else {
-    statusDiv.innerText = "Opponent's turn";
-  }
+function startClockOnce() {
+  timerInterval = setInterval(() => {
+    secondsElapsed++;
+    const mins = String(Math.floor(secondsElapsed/60)).padStart(2,'0');
+    const secs = String(secondsElapsed%60).padStart(2,'0');
+    clockEl.innerText = `${mins}:${secs}`;
+  }, 1000);
 }
