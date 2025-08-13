@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Chess - Local Two Player</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; }
+    #board { display: grid; grid-template-columns: repeat(8, 60px); grid-template-rows: repeat(8, 60px); margin-top: 20px; }
+    .square { width: 60px; height: 60px; display: flex; justify-content: center; align-items: center; font-size: 40px; cursor: pointer; }
+    .light { background-color: #f0d9b5; }
+    .dark { background-color: #b58863; }
+    .selected { outline: 3px solid red; }
+  </style>
+</head>
+<body>
+  <h1>♟ Local Chess Game</h1>
+  <div id="board"></div>
+  <div id="status" style="margin-top: 10px; font-weight: bold;"></div>
+
+  <!-- JS Files -->
+  <script src="js/chessboard.js"></script>
+  <script src="js/rules.js"></script>
+  <script>
+    window.addEventListener('load', () => {
+      initBoard();
+      renderBoard();
+    });
+  </script>
+</body>
+</html>

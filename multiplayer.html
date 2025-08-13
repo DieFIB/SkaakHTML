@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Multiplayer Chess Game</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <h1>♟ Multiplayer Chess Game</h1>
+  <div id="board-container">
+    <div id="board" style="width:480px; height:480px;"></div>
+  </div>
+  <div id="status">Loading...</div>
+
+  <!-- Single-player chess scripts -->
+  <script src="js/chessboard.js"></script>
+  <script src="js/rules.js"></script>
+
+  <!-- Firebase -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+    import { getFirestore } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCUPazvgorpcJwLQK7f_nbfS42OfIpwnqo",
+      authDomain: "html-skaak.firebaseapp.com",
+      projectId: "html-skaak",
+      storageBucket: "html-skaak.appspot.com",
+      messagingSenderId: "807793816860",
+      appId: "1:807793816860:web:02d2ea848d93ee3735f6d9",
+      measurementId: "G-0ERLFKRWX9"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    window.db = getFirestore(app);
+  </script>
+
+  <!-- Multiplayer scripts -->
+  <script type="module" src="js/multiplayer/firestore.js"></script>
+  <script type="module" src="js/multiplayer/lobby.js"></script>
+  <script type="module" src="js/multiplayer/multiplayer.js"></script>
+
+  <!-- Initialize game after window loads -->
+  <script type="module">
+    import { initLobby } from "./js/multiplayer/lobby.js";
+
+    window.addEventListener("load", async () => {
+      initLobby((gameId, isCreator) => {
+        console.log("Game ID:", gameId);
+
+        // Initialize chessboard from local single-player code
+        window.initBoard();      // reset board state
+        window.renderBoard();    // draw board
+
+        document.getElementById("status").innerText = `Game ID: ${gameId}. Waiting for opponent...`;
+
+        // Here you can now call multiplayer.js functions to subscribe to Firestore
+        // and update the board in real-time
+        if (window.startMultiplayer) window.startMultiplayer(gameId, isCreator);
+      });
+    });
+  </script>
+</body>
+</html>
