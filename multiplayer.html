@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Multiplayer Chess Game</title>
+  <title>Multiplayer Chess</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
@@ -11,9 +11,11 @@
   <div id="board-container">
     <div id="board"></div>
   </div>
-  <div id="status">Loading...</div>
-  <div id="game-code">Code: ----</div>
-  <div id="clock">White: 00:00 | Black: 00:00</div>
+  <div id="game-info">
+    <div id="status">Loading...</div>
+    <div>Game Code: <span id="game-code"></span></div>
+    <div>Clock: <span id="game-clock">00:00</span></div>
+  </div>
 
   <!-- Firebase -->
   <script type="module">
@@ -34,7 +36,7 @@
     window.db = getFirestore(app);
   </script>
 
-  <!-- Multiplayer scripts -->
+  <!-- Multiplayer JS -->
   <script type="module" src="js/multiplayer/firestore.js"></script>
   <script type="module" src="js/multiplayer/lobby.js"></script>
   <script type="module" src="js/multiplayer/multiplayer.js"></script>

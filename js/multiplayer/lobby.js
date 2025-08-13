@@ -1,37 +1,29 @@
-import { createGame, gameExists } from "./firestore.js";
-import { initBoard, renderBoard } from "../chessboard.js";
+import { createGame, joinGame, subscribeToGame } from "./firestore.js";
 
-export async function initLobby(){
-  const code = localStorage.getItem('gameCode');
-  const isCreator = localStorage.getItem('isCreator') === 'true';
+export async function initLobby(callback) {
+  const params = new URLSearchParams(window.location.search);
+  let mode = params.get('mode');
+  let gameId = params.get('code');
 
-  document.getElementById('game-code').innerText = `Code: ${code}`;
+  if(mode === 'generate') {
+    // Generate 4-digit numeric code
+    gameId = Math.floor(1000 + Math.random() * 9000).toString();
+    document.getElementById('game-code').innerText = gameId;
 
-  if(isCreator){
-    const initialState = {
-      board: [
-        ['r','n','b','q','k','b','n','r'],
-        ['p','p','p','p','p','p','p','p'],
-        ['','','','','','','',''],
-        ['','','','','','','',''],
-        ['','','','','','','',''],
-        ['','','','','','','',''],
-        ['P','P','P','P','P','P','P','P'],
-        ['R','N','B','Q','K','B','N','R']
-      ],
-      currentPlayer: 'white',
-      castlingRights: {whiteK:true, whiteQ:true, blackK:true, blackQ:true},
-      enPassantTarget: null,
-      clock: {white:0, black:0},
-      started: false
-    };
-    await createGame(code, initialState);
-  } else {
-    const exists = await gameExists(code);
+    await createGame(gameId);
+    callback(gameId, true); // true = creator
+  }
+  else if(mode === 'join' && gameId) {
+    const exists = await joinGame(gameId);
     if(!exists){
-      alert("Game code not found. Go back and check code.");
-      window.location.href = "landing.html";
+      alert("Game code not found!");
+      window.location.href = 'index.html';
       return;
     }
+    document.getElementById('game-code').innerText = gameId;
+    callback(gameId, false); // false = joiner
+  } else {
+    alert("Invalid mode or code.");
+    window.location.href = 'index.html';
   }
 }
