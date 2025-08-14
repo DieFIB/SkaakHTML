@@ -1,47 +1,42 @@
 // js/chessboard/rules.js
 
-// Check for checkmate or stalemate
-window.isGameOver = function(board, turn, castling, enPassant){
-  let hasMoves = false;
+export function isMoveAllowed(piece, player) {
+  if (!piece) return false;
+  const color = piece.toUpperCase() === piece ? 'white' : 'black';
+  return color === player;
+}
 
+export function updateCastlingRights(castling, piece, from) {
+  const newRights = {...castling};
+  if (piece === 'K') { newRights.whiteK=false; newRights.whiteQ=false; }
+  if (piece === 'k') { newRights.blackK=false; newRights.blackQ=false; }
+  if (piece === 'R') {
+    if(from.r===7 && from.c===0) newRights.whiteQ=false;
+    if(from.r===7 && from.c===7) newRights.whiteK=false;
+  }
+  if (piece === 'r') {
+    if(from.r===0 && from.c===0) newRights.blackQ=false;
+    if(from.r===0 && from.c===7) newRights.blackK=false;
+  }
+  return newRights;
+}
+
+export function isGameOver(board, turn, castling, enPassant) {
+  // Check for legal moves
+  let hasMoves=false;
   for(let r=0;r<8;r++){
     for(let c=0;c<8;c++){
-      const piece = board[r][c];
-      if(!piece || (piece.toUpperCase()===piece?'white':'black')!==turn) continue;
-      const moves = window.getLegalMoves(board,r,c,turn,castling,enPassant);
-      if(moves.length>0) {
-        hasMoves = true;
-        break;
+      if(board[r][c] && board[r][c].toUpperCase()===(turn==='white'?'P':'p') || board[r][c].toUpperCase()===board[r][c]? 'white' : 'black'===turn){
+        // Use moves.js here if needed
+        const moves = window.getLegalMoves(board,r,c,turn,castling,enPassant);
+        if(moves.length>0) hasMoves=true;
       }
     }
-    if(hasMoves) break;
   }
+  if(hasMoves) return {over:false};
+  // Check for checkmate/stalemate
+  const inCheck = window.isInCheck(board,turn);
+  return {over:true,result:inCheck?'checkmate':'stalemate',winner:inCheck?opponent(turn):null};
+}
 
-  if(!hasMoves){
-    if(window.isInCheck(board,turn)) return {over:true, result:'checkmate', winner:(turn==='white'?'black':'white')};
-    else return {over:true, result:'stalemate', winner:null};
-  }
-
-  return {over:false, result:null, winner:null};
-};
-
-// Validate if a move is allowed (turn + piece color)
-window.isMoveAllowed = function(piece, currentTurn){
-  if(!piece) return false;
-  return (piece.toUpperCase()===piece?'white':'black') === currentTurn;
-};
-
-// Handle castling updates after a king/rook move
-window.updateCastlingRights = function(castling, fromPiece, fromPos){
-  if(fromPiece.toLowerCase()==='k'){
-    if(fromPiece.toUpperCase()==='K') castling.whiteK=false, castling.whiteQ=false;
-    else castling.blackK=false, castling.blackQ=false;
-  }
-  if(fromPiece.toLowerCase()==='r'){
-    if(fromPos.r===7 && fromPos.c===0) castling.whiteQ=false;
-    if(fromPos.r===7 && fromPos.c===7) castling.whiteK=false;
-    if(fromPos.r===0 && fromPos.c===0) castling.blackQ=false;
-    if(fromPos.r===0 && fromPos.c===7) castling.blackK=false;
-  }
-  return castling;
-};
+function opponent(color){ return color==='white'?'black':'white'; }
