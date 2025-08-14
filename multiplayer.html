@@ -14,7 +14,8 @@
   <div id="game-info">
     <div id="status">Loading...</div>
     <div>Game Code: <span id="game-code"></span></div>
-    <div>Clock: <span id="game-clock">00:00</span></div>
+    <div>White Clock: <span id="white-clock">00:00</span></div>
+    <div>Black Clock: <span id="black-clock">00:00</span></div>
   </div>
 
   <!-- Firebase -->
@@ -36,7 +37,10 @@
     window.db = getFirestore(app);
   </script>
 
-  <!-- Multiplayer JS -->
+  <!-- Chessboard & Multiplayer -->
+  <script type="module" src="js/chessboard/rules.js"></script>
+  <script type="module" src="js/chessboard/moves.js"></script>
+  <script type="module" src="js/chessboard/chessboard.js"></script>
   <script type="module" src="js/multiplayer/firestore.js"></script>
   <script type="module" src="js/multiplayer/lobby.js"></script>
   <script type="module" src="js/multiplayer/multiplayer.js"></script>

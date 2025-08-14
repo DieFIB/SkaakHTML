@@ -1,14 +1,23 @@
+/* General body styling */
 body {
   font-family: Arial, sans-serif;
   text-align: center;
   background-color: #f4f4f4;
+  margin: 0;
+  padding: 0;
 }
 
+/* Board container */
+#board-container {
+  margin: 20px auto;
+  display: inline-block;
+}
+
+/* Board squares */
 #board {
   display: grid;
   grid-template-columns: repeat(8, 60px);
   grid-template-rows: repeat(8, 60px);
-  margin: 20px auto;
   border: 4px solid #333;
 }
 
@@ -20,6 +29,7 @@ body {
   justify-content: center;
   font-size: 40px;
   cursor: pointer;
+  transition: background-color 0.2s;
 }
 
 .light {
@@ -30,11 +40,36 @@ body {
   background-color: #b58863;
 }
 
+/* Highlight selected piece */
+.selected {
+  outline: 3px solid orange;
+  box-sizing: border-box;
+}
+
+/* Highlight legal moves */
 .highlight {
-  outline: 3px solid yellow;
+  background-color: #8fbc8f !important; /* soft green for available moves */
+}
+
+/* Game info */
+#game-info {
+  margin-top: 20px;
+  font-size: 18px;
 }
 
 #status {
-  margin-top: 20px;
   font-weight: bold;
+  margin-bottom: 10px;
+}
+
+/* Input and buttons */
+#landing-container input, #landing-container button {
+  padding: 10px;
+  margin: 5px;
+  font-size: 16px;
+}
+
+#landing-container input {
+  width: 100px;
+  text-align: center;
 }
